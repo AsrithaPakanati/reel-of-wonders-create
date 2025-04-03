@@ -7,7 +7,6 @@ import { Style } from './StyleSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { PlayCircle, PauseCircle, RotateCcw, Volume2, VolumeX, Maximize2 } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Slider } from '@/components/ui/slider';
 
 interface StoryGeneratorProps {
@@ -18,144 +17,104 @@ interface StoryGeneratorProps {
   onFinish: () => void;
 }
 
-interface StoryFrame {
-  imageUrl: string;
-  text: string;
-  audioUrl?: string;
+interface StoryVideoData {
+  videoUrl: string;
+  thumbnailUrl: string;
+  duration: number;
 }
 
 export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(true);
-  const [storyFrames, setStoryFrames] = useState<StoryFrame[]>([]);
-  const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const [storyData, setStoryData] = useState<StoryVideoData | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(0.8);
-  const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  const intervalRef = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
-  
-  // In a real implementation, this would call an AI service to generate the story, video frames, and audio
+
+  // For real implementation, generate video based on theme, style, topic
   useEffect(() => {
-    const generateStory = async () => {
+    const generateStoryVideo = async () => {
       setIsGenerating(true);
       
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      
-      // Mock story frames based on selected options
-      // In a real implementation, this would generate actual video frames and audio narration
-      const mockFrames = [
-        {
-          imageUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')},1`,
-          text: `Once upon a time in the grand court of Emperor Akbar, there lived a wise adviser named Birbal.`,
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // Mock audio URL
-        },
-        {
-          imageUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')},2`,
-          text: `Akbar was known for his curiosity and intelligence, often posing challenging questions to his courtiers.`,
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
-        },
-        {
-          imageUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')},3`,
-          text: `One day, the Emperor decided to test Birbal's wit with a particularly difficult riddle.`,
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
-        },
-        {
-          imageUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')},4`,
-          text: `"Birbal," said Akbar, "find me something that makes a sad person happy and a happy person sad."`,
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
-        },
-        {
-          imageUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')},5`,
-          text: `After some thought, Birbal returned with a simple ring inscribed with the words: "This too shall pass."`,
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
-        }
-      ];
-      
-      setStoryFrames(mockFrames);
-      setIsGenerating(false);
-      // Start playing automatically once generated
-      handlePlayPause(true);
+      try {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        
+        // In a real implementation, this would call your AI video generation service
+        // For now using sample video
+        const mockVideoData = {
+          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Sample video
+          thumbnailUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`,
+          duration: 60, // Default duration in seconds
+        };
+        
+        setStoryData(mockVideoData);
+        setIsGenerating(false);
+        
+        // This would be replaced with actual video generation API call
+        console.log("Generating video with:", { theme, style, topic });
+      } catch (error) {
+        console.error("Error generating video:", error);
+        toast({
+          title: "Error",
+          description: "Failed to generate story video. Please try again.",
+          variant: "destructive"
+        });
+      }
     };
     
-    generateStory();
-
-    // Cleanup interval on unmount
-    return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    generateStoryVideo();
   }, [theme, style, topic]);
 
-  // Audio event handlers
-  const setupAudio = () => {
-    if (!storyFrames.length || !storyFrames[currentFrameIndex].audioUrl) return;
-    
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    
-    const audio = new Audio(storyFrames[currentFrameIndex].audioUrl);
-    audio.volume = volume;
-    audio.muted = isMuted;
-    
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-    
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-      setProgress((audio.currentTime / audio.duration) * 100);
-    });
-    
-    audio.addEventListener('ended', () => {
-      // Move to the next frame when audio ends
-      handleNextFrame();
-    });
-    
-    audioRef.current = audio;
-    
-    if (isPlaying) {
-      audio.play().catch(error => {
-        console.error("Audio playback error:", error);
-      });
-    }
-  };
-  
-  // Setup audio when current frame changes
+  // Video element event handlers
   useEffect(() => {
-    setupAudio();
-  }, [currentFrameIndex, storyFrames]);
-  
+    const videoElement = videoRef.current;
+    if (!videoElement || !storyData) return;
+    
+    const onLoadedMetadata = () => {
+      setDuration(videoElement.duration);
+    };
+    
+    const onTimeUpdate = () => {
+      setCurrentTime(videoElement.currentTime);
+      setProgress((videoElement.currentTime / videoElement.duration) * 100);
+    };
+    
+    const onEnded = () => {
+      setIsPlaying(false);
+      videoElement.currentTime = 0;
+      setProgress(0);
+    };
+    
+    videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
+    videoElement.addEventListener('timeupdate', onTimeUpdate);
+    videoElement.addEventListener('ended', onEnded);
+    
+    // Set initial volume
+    videoElement.volume = volume;
+    videoElement.muted = isMuted;
+    
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+      videoElement.removeEventListener('timeupdate', onTimeUpdate);
+      videoElement.removeEventListener('ended', onEnded);
+    };
+  }, [storyData]);
+
   // Handle volume and mute changes
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-      audioRef.current.muted = isMuted;
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = isMuted;
     }
   }, [volume, isMuted]);
-
-  // Handle progress bar changes
-  const handleProgressChange = (value: number[]) => {
-    if (audioRef.current && duration) {
-      const newTime = (value[0] / 100) * duration;
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-      setProgress(value[0]);
-    }
-  };
-
+  
   // Format time display (mm:ss)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -163,44 +122,38 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Control playing and pausing the story
+  // Control playing and pausing the video
   const handlePlayPause = (play?: boolean) => {
+    if (!videoRef.current) return;
+    
     const shouldPlay = play !== undefined ? play : !isPlaying;
     
     if (shouldPlay) {
-      if (audioRef.current) {
-        audioRef.current.play().catch(error => {
-          console.error("Audio playback error:", error);
-        });
-      }
+      videoRef.current.play().catch(error => {
+        console.error("Video playback error:", error);
+      });
       setIsPlaying(true);
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      videoRef.current.pause();
       setIsPlaying(false);
     }
   };
 
-  // Handle moving to next frame
-  const handleNextFrame = () => {
-    setCurrentFrameIndex(prevIndex => {
-      const nextIndex = prevIndex + 1;
-      // If we've reached the end, loop back to beginning
-      if (nextIndex >= storyFrames.length) {
-        return 0;
-      }
-      return nextIndex;
-    });
+  // Handle progress bar changes
+  const handleProgressChange = (value: number[]) => {
+    if (videoRef.current && duration) {
+      const newTime = (value[0] / 100) * duration;
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      setProgress(value[0]);
+    }
   };
 
   // Reset to beginning and restart playback
   const handleRestart = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setCurrentFrameIndex(0);
+    if (!videoRef.current) return;
+    
+    videoRef.current.currentTime = 0;
     setProgress(0);
     setCurrentTime(0);
     handlePlayPause(true);
@@ -226,15 +179,17 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     }
   };
 
-  // When the user completes the reel
+  // When the user completes watching the video
   const handleComplete = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
     }
+    
     toast({
       title: "Story Complete!",
-      description: "You've finished watching your story video.",
+      description: "Your story video has been saved to your library.",
     });
+    
     onFinish();
   };
   
@@ -264,27 +219,14 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
         ) : (
           <div className="w-full max-w-2xl" ref={videoContainerRef}>
             <div className="relative bg-black rounded-lg overflow-hidden">
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {storyFrames.map((frame, index) => (
-                    <CarouselItem key={index} className={index === currentFrameIndex ? "block" : "hidden"}>
-                      <div className="relative">
-                        <img 
-                          src={frame.imageUrl}
-                          alt={`Story Frame ${index + 1}`}
-                          className="w-full h-[400px] object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                          <p className="text-lg text-white">{frame.text}</p>
-                        </div>
-                        <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full">
-                          {currentFrameIndex + 1} / {storyFrames.length}
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
+              {/* Video element */}
+              <video
+                ref={videoRef}
+                src={storyData?.videoUrl}
+                poster={storyData?.thumbnailUrl}
+                className="w-full h-[400px] object-cover"
+                playsInline
+              />
 
               {/* Video controls overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
@@ -389,7 +331,7 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
           ) : (
             <>
               <Button variant="outline" onClick={onBack}>Start Over</Button>
-              <Button onClick={handleComplete}>Finish</Button>
+              <Button onClick={handleComplete}>Save to Library</Button>
             </>
           )}
         </div>
