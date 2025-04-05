@@ -6,8 +6,10 @@ import { Theme } from './ThemeSelector';
 import { Style } from './StyleSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
-import { PlayCircle, PauseCircle, RotateCcw, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { PlayCircle, PauseCircle, RotateCcw, Volume2, VolumeX, Maximize2, Sparkles } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StoryGeneratorProps {
   theme: Theme;
@@ -21,6 +23,7 @@ interface StoryVideoData {
   videoUrl: string;
   thumbnailUrl: string;
   duration: number;
+  storyText?: string;
 }
 
 export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryGeneratorProps) {
@@ -33,44 +36,115 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [storyText, setStoryText] = useState<string>('');
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // For real implementation, generate video based on theme, style, topic
+  // Generate story using Hugging Face API through the edge function
   useEffect(() => {
-    const generateStoryVideo = async () => {
+    const generateStoryContent = async () => {
       setIsGenerating(true);
       
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        // Call the edge function to generate story content
+        const { data, error } = await supabase.functions.invoke('generate-story', {
+          body: { theme, style, topic },
+        });
         
-        // In a real implementation, this would call your AI video generation service
-        // For now using sample video
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        console.log("Generated story data:", data);
+        
+        // For now using sample video, but we're adding the generated content
         const mockVideoData = {
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Sample video
-          thumbnailUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`,
-          duration: 60, // Default duration in seconds
+          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          thumbnailUrl: data.image || `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`,
+          duration: 60,
+          storyText: data.text,
         };
         
         setStoryData(mockVideoData);
+        setStoryText(data.text || '');
+        setIsAiGenerated(true);
         setIsGenerating(false);
         
-        // This would be replaced with actual video generation API call
-        console.log("Generating video with:", { theme, style, topic });
       } catch (error) {
-        console.error("Error generating video:", error);
+        console.error("Error generating story:", error);
         toast({
           title: "Error",
-          description: "Failed to generate story video. Please try again.",
+          description: "Failed to generate story. Using placeholder content instead.",
           variant: "destructive"
         });
+        
+        // Fallback to sample video if AI generation fails
+        const mockVideoData = {
+          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          thumbnailUrl: `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`,
+          duration: 60,
+        };
+        
+        setStoryData(mockVideoData);
+        setStoryText(`This is a placeholder story about ${topic} in ${style} style. The AI-generated content could not be loaded.`);
+        setIsGenerating(false);
       }
     };
     
-    generateStoryVideo();
+    generateStoryContent();
   }, [theme, style, topic]);
+
+  // Function to regenerate the story
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    
+    try {
+      // Call the edge function to generate story content
+      const { data, error } = await supabase.functions.invoke('generate-story', {
+        body: { theme, style, topic },
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Update story text with new generated content
+      setStoryText(data.text || '');
+      
+      // Update thumbnail if available
+      if (data.image && storyData) {
+        setStoryData({
+          ...storyData,
+          thumbnailUrl: data.image,
+          storyText: data.text,
+        });
+      }
+      
+      toast({
+        title: "Story Regenerated",
+        description: "Your story has been regenerated with new content.",
+      });
+      
+    } catch (error) {
+      console.error("Error regenerating story:", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate story. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  // Handle text change for manual editing
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setStoryText(e.target.value);
+    setIsAiGenerated(false);
+  };
 
   // Video element event handlers
   useEffect(() => {
@@ -205,7 +279,7 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
         </p>
       </div>
       
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center space-y-6">
         {isGenerating ? (
           <Card className="w-full max-w-2xl overflow-hidden">
             <div className="p-0">
@@ -217,115 +291,145 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
             </div>
           </Card>
         ) : (
-          <div className="w-full max-w-2xl" ref={videoContainerRef}>
-            <div className="relative bg-black rounded-lg overflow-hidden">
-              {/* Video element */}
-              <video
-                ref={videoRef}
-                src={storyData?.videoUrl}
-                poster={storyData?.thumbnailUrl}
-                className="w-full h-[400px] object-cover"
-                playsInline
-              />
-
-              {/* Video controls overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                {/* Progress bar */}
-                <Slider
-                  value={[progress]}
-                  min={0}
-                  max={100}
-                  step={0.1}
-                  onValueChange={handleProgressChange}
-                  className="mb-2"
+          <>
+            <div className="w-full max-w-2xl" ref={videoContainerRef}>
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                {/* Video element */}
+                <video
+                  ref={videoRef}
+                  src={storyData?.videoUrl}
+                  poster={storyData?.thumbnailUrl}
+                  className="w-full h-[400px] object-cover"
+                  playsInline
                 />
-                
-                {/* Time display */}
-                <div className="flex justify-between text-xs text-white mb-2">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-                
-                {/* Control buttons */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {isPlaying ? (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handlePlayPause(false)}
-                        className="text-white hover:bg-white/20"
-                      >
-                        <PauseCircle className="h-6 w-6" />
-                        <span className="sr-only">Pause</span>
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handlePlayPause(true)}
-                        className="text-white hover:bg-white/20"
-                      >
-                        <PlayCircle className="h-6 w-6" />
-                        <span className="sr-only">Play</span>
-                      </Button>
-                    )}
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={handleRestart}
-                      className="text-white hover:bg-white/20"
-                    >
-                      <RotateCcw className="h-5 w-5" />
-                      <span className="sr-only">Restart</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={handleToggleMute}
-                      className="text-white hover:bg-white/20"
-                    >
-                      {isMuted ? (
-                        <VolumeX className="h-5 w-5" />
-                      ) : (
-                        <Volume2 className="h-5 w-5" />
-                      )}
-                      <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
-                    </Button>
-                    
-                    {/* Volume slider */}
-                    <div className="w-24 hidden sm:block">
-                      <Slider
-                        value={[isMuted ? 0 : volume * 100]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onValueChange={(value) => {
-                          setVolume(value[0] / 100);
-                          if (value[0] > 0 && isMuted) setIsMuted(false);
-                        }}
-                      />
-                    </div>
+
+                {/* Video controls overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                  {/* Progress bar */}
+                  <Slider
+                    value={[progress]}
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    onValueChange={handleProgressChange}
+                    className="mb-2"
+                  />
+                  
+                  {/* Time display */}
+                  <div className="flex justify-between text-xs text-white mb-2">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
                   </div>
                   
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleToggleFullscreen}
-                    className="text-white hover:bg-white/20"
-                  >
-                    <Maximize2 className="h-5 w-5" />
-                    <span className="sr-only">Fullscreen</span>
-                  </Button>
+                  {/* Control buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {isPlaying ? (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handlePlayPause(false)}
+                          className="text-white hover:bg-white/20"
+                        >
+                          <PauseCircle className="h-6 w-6" />
+                          <span className="sr-only">Pause</span>
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handlePlayPause(true)}
+                          className="text-white hover:bg-white/20"
+                        >
+                          <PlayCircle className="h-6 w-6" />
+                          <span className="sr-only">Play</span>
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleRestart}
+                        className="text-white hover:bg-white/20"
+                      >
+                        <RotateCcw className="h-5 w-5" />
+                        <span className="sr-only">Restart</span>
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleToggleMute}
+                        className="text-white hover:bg-white/20"
+                      >
+                        {isMuted ? (
+                          <VolumeX className="h-5 w-5" />
+                        ) : (
+                          <Volume2 className="h-5 w-5" />
+                        )}
+                        <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
+                      </Button>
+                      
+                      {/* Volume slider */}
+                      <div className="w-24 hidden sm:block">
+                        <Slider
+                          value={[isMuted ? 0 : volume * 100]}
+                          min={0}
+                          max={100}
+                          step={1}
+                          onValueChange={(value) => {
+                            setVolume(value[0] / 100);
+                            if (value[0] > 0 && isMuted) setIsMuted(false);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={handleToggleFullscreen}
+                      className="text-white hover:bg-white/20"
+                    >
+                      <Maximize2 className="h-5 w-5" />
+                      <span className="sr-only">Fullscreen</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Story text display and editing */}
+            <Card className="w-full max-w-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium">Story Text</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRegenerate}
+                  disabled={isRegenerating}
+                  className="flex items-center gap-1"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isRegenerating ? "Regenerating..." : "Regenerate"}
+                </Button>
+              </div>
+              <Textarea 
+                value={storyText} 
+                onChange={handleTextChange}
+                className="min-h-[150px] mb-2" 
+                placeholder="Your story text will appear here..."
+              />
+              <p className="text-xs text-muted-foreground">
+                {isAiGenerated 
+                  ? "This story was generated by AI. You can edit it or regenerate a new one."
+                  : "You have edited this story. Regenerate to create a new AI version."}
+              </p>
+            </Card>
+          </>
         )}
         
-        <div className="flex justify-between w-full max-w-2xl mt-6">
+        <div className="flex justify-between w-full max-w-2xl">
           {isGenerating ? (
             <Button variant="outline" onClick={onBack}>Cancel</Button>
           ) : (
