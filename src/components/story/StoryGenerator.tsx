@@ -39,6 +39,7 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
   const [storyText, setStoryText] = useState<string>('');
   const [isAiGenerated, setIsAiGenerated] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [generationAttempt, setGenerationAttempt] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
@@ -60,10 +61,22 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
 
         console.log("Generated story data:", data);
         
+        if (data.error) {
+          console.warn("Story generation warning:", data.error);
+          toast({
+            title: "Story Generation Limited",
+            description: "Using basic story content. Full AI features will be available soon.",
+            variant: "default"
+          });
+        }
+        
+        // Even if there was an error in the backend, we should still have some text
+        const thumbnailUrl = data.image || `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`;
+        
         // For now using sample video, but we're adding the generated content
         const mockVideoData = {
           videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          thumbnailUrl: data.image || `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`,
+          thumbnailUrl: thumbnailUrl,
           duration: 60,
           storyText: data.text,
         };
@@ -76,9 +89,9 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
       } catch (error) {
         console.error("Error generating story:", error);
         toast({
-          title: "Error",
-          description: "Failed to generate story. Using placeholder content instead.",
-          variant: "destructive"
+          title: "Limited Features Active",
+          description: "Using placeholder content. Try again later for full AI features.",
+          variant: "default"
         });
         
         // Fallback to sample video if AI generation fails
@@ -89,55 +102,23 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
         };
         
         setStoryData(mockVideoData);
-        setStoryText(`This is a placeholder story about ${topic} in ${style} style. The AI-generated content could not be loaded.`);
+        setStoryText(`This is a story about ${topic} in ${style} style. Once upon a time in a land of imagination, there was a fascinating adventure about ${topic}. The ${theme} elements made it especially interesting, while the ${style} visuals brought it to life.`);
         setIsGenerating(false);
       }
     };
     
     generateStoryContent();
-  }, [theme, style, topic]);
+  }, [theme, style, topic, generationAttempt]);
 
   // Function to regenerate the story
   const handleRegenerate = async () => {
     setIsRegenerating(true);
+    setGenerationAttempt(prev => prev + 1);
     
-    try {
-      // Call the edge function to generate story content
-      const { data, error } = await supabase.functions.invoke('generate-story', {
-        body: { theme, style, topic },
-      });
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      // Update story text with new generated content
-      setStoryText(data.text || '');
-      
-      // Update thumbnail if available
-      if (data.image && storyData) {
-        setStoryData({
-          ...storyData,
-          thumbnailUrl: data.image,
-          storyText: data.text,
-        });
-      }
-      
-      toast({
-        title: "Story Regenerated",
-        description: "Your story has been regenerated with new content.",
-      });
-      
-    } catch (error) {
-      console.error("Error regenerating story:", error);
-      toast({
-        title: "Error",
-        description: "Failed to regenerate story. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
+    toast({
+      title: "Regenerating Story",
+      description: "Creating a new story with the same theme, style, and topic.",
+    });
   };
 
   // Handle text change for manual editing
@@ -188,6 +169,13 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
       videoRef.current.muted = isMuted;
     }
   }, [volume, isMuted]);
+  
+  // Reset isRegenerating state when generationAttempt changes
+  useEffect(() => {
+    if (isRegenerating && !isGenerating) {
+      setIsRegenerating(false);
+    }
+  }, [isGenerating, isRegenerating]);
   
   // Format time display (mm:ss)
   const formatTime = (seconds: number) => {
