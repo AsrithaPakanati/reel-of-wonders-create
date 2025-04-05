@@ -73,15 +73,15 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
         // Even if there was an error in the backend, we should still have some text
         const thumbnailUrl = data.image || `https://source.unsplash.com/random/800x600?${style},${topic.split(' ').join(',')}`;
         
-        // For now using sample video, but we're adding the generated content
-        const mockVideoData = {
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        // Use the video URL from the edge function
+        const videoData = {
+          videoUrl: data.videoUrl || 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
           thumbnailUrl: thumbnailUrl,
           duration: 60,
           storyText: data.text,
         };
         
-        setStoryData(mockVideoData);
+        setStoryData(videoData);
         setStoryText(data.text || '');
         setIsAiGenerated(true);
         setIsGenerating(false);

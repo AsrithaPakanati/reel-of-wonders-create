@@ -7,6 +7,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Map of themed video URLs organized by style and theme
+const videoLibrary = {
+  ghibli: {
+    education: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    planet: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    bedtime: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    rhyme: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+  },
+  animation: {
+    education: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    planet: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    bedtime: "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    rhyme: "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4"
+  },
+  cartoon: {
+    education: "https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+    planet: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    bedtime: "https://storage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+    rhyme: "https://storage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4"
+  },
+  watercolor: {
+    education: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    planet: "https://storage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    bedtime: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    rhyme: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+  }
+}
+
+// Fallback video if style or theme doesn't match
+const fallbackVideo = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -79,12 +110,24 @@ serve(async (req) => {
       console.error("Image generation failed:", imageError)
       // We'll return null for the image and let the frontend handle the fallback
     }
+
+    // Get appropriate video URL from our library
+    let videoUrl = fallbackVideo;
+    try {
+      // Safely access the video library
+      if (videoLibrary[style] && videoLibrary[style][theme]) {
+        videoUrl = videoLibrary[style][theme];
+      }
+    } catch (videoError) {
+      console.error("Error selecting video:", videoError);
+    }
     
     return new Response(
       JSON.stringify({ 
         text: generatedText,
         image: imageResult,
         imagePrompt: imagePrompt,
+        videoUrl: videoUrl
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -96,6 +139,7 @@ serve(async (req) => {
         error: 'Story generation failed',
         text: 'Once upon a time in a land far away... (AI-generated story unavailable at this moment, please try again later)',
         image: null,
+        videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
         details: error.message 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
