@@ -9,7 +9,7 @@ We propose an AI-powered platform where children can generate animated story ree
 
 
 
-
+** url ** https://lovable.dev/projects/b0ea707f-649c-45fd-b25b-eefc04cee2c6
 ```
 
 
