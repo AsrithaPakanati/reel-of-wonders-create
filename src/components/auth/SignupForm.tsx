@@ -17,6 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -32,6 +34,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
   const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -47,11 +50,15 @@ export function SignupForm() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
+    setSignupError(null);
+    
     try {
       const success = await signup(values.email, values.name, values.password);
       if (success) {
         navigate('/dashboard');
       }
+    } catch (error: any) {
+      setSignupError(error.message || 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -66,6 +73,13 @@ export function SignupForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {signupError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{signupError}</AlertDescription>
+              </Alert>
+            )}
+            
             <FormField
               control={form.control}
               name="name"

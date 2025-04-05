@@ -10,6 +10,15 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Get user display name
+  const getUserName = () => {
+    if (!user) return 'User';
+    return user.user_metadata?.name || 
+           user.user_metadata?.full_name || 
+           user.email?.split('@')[0] || 
+           'User';
+  };
+
   // Mock story data
   const stories = [
     {
@@ -37,7 +46,7 @@ const Dashboard = () => {
       <main className="flex-grow container py-8 px-4">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
+            <h1 className="text-3xl font-bold">Welcome, {getUserName()}</h1>
             <p className="text-muted-foreground">Create and manage your visual stories</p>
           </div>
           

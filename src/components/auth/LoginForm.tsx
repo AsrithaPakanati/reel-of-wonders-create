@@ -17,6 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -27,6 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -40,11 +43,15 @@ export function LoginForm() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
+    setLoginError(null);
+    
     try {
       const success = await login(values.email, values.password);
       if (success) {
         navigate('/dashboard');
       }
+    } catch (error: any) {
+      setLoginError(error.message || 'Failed to sign in. Please check your credentials and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -59,6 +66,13 @@ export function LoginForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {loginError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{loginError}</AlertDescription>
+              </Alert>
+            )}
+            
             <FormField
               control={form.control}
               name="email"
