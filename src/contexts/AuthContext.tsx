@@ -1,19 +1,16 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, name: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,37 +29,49 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Mock login function - in a real app, this would call an API
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // For demo purposes, any email/password combination works
-      const mockUser = {
-        id: Math.random().toString(36).substring(2, 9),
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0]
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
+        password,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: error.message,
+        });
+        return false;
+      }
+
       toast({
         title: "Login successful",
-        description: `Welcome back, ${mockUser.name}!`,
+        description: "Welcome back!",
       });
       
       return true;
@@ -70,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: "An unexpected error occurred.",
       });
       return false;
     } finally {
@@ -78,25 +87,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // Mock signup function
   const signup = async (email: string, name: string, password: string) => {
     try {
       setIsLoading(true);
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      const mockUser = {
-        id: Math.random().toString(36).substring(2, 9),
+      const { error } = await supabase.auth.signUp({
         email,
-        name
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description: error.message,
+        });
+        return false;
+      }
+
       toast({
         title: "Account created",
-        description: `Welcome to Reel of Wonders, ${name}!`,
+        description: "Please check your email for the confirmation link.",
       });
       
       return true;
@@ -104,7 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       toast({
         variant: "destructive",
         title: "Signup failed",
-        description: "Please check your information and try again.",
+        description: "An unexpected error occurred.",
       });
       return false;
     } finally {
@@ -112,17 +128,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Logout failed",
+        description: "An unexpected error occurred.",
+      });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, session, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

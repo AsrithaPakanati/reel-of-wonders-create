@@ -26,8 +26,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<FormValues>({
@@ -39,14 +39,14 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: FormValues) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const success = await login(values.email, values.password);
       if (success) {
         navigate('/dashboard');
       }
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -85,8 +85,8 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </Form>

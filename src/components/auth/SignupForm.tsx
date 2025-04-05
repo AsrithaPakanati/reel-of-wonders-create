@@ -31,8 +31,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function SignupForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<FormValues>({
@@ -46,14 +46,14 @@ export function SignupForm() {
   });
 
   async function onSubmit(values: FormValues) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const success = await signup(values.email, values.name, values.password);
       if (success) {
         navigate('/dashboard');
       }
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -118,8 +118,8 @@ export function SignupForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating Account..." : "Sign Up"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+              {isSubmitting ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
         </Form>
