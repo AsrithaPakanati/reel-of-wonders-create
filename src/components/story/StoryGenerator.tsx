@@ -50,6 +50,8 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
       setIsGenerating(true);
       
       try {
+        console.log("Generating story for:", { theme, style, topic });
+        
         // Call the edge function to generate story content
         const { data, error } = await supabase.functions.invoke('generate-story', {
           body: { theme, style, topic },
@@ -114,6 +116,13 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     setGenerationAttempt(prev => prev + 1);
+    
+    // Reset video if it's playing
+    if (videoRef.current && isPlaying) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
     
     toast({
       title: "Regenerating Story",

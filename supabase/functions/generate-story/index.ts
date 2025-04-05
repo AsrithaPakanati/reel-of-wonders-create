@@ -47,8 +47,26 @@ serve(async (req) => {
   try {
     const { theme, style, topic } = await req.json()
     
-    // Create a prompt based on user selections
-    const prompt = `Generate a short ${theme} story in the ${style} style about ${topic}. Make it engaging and suitable for a video.`
+    // Create a more specific prompt based on user selections
+    const themeDescriptions = {
+      education: "educational and informative",
+      planet: "about planets and space exploration",
+      bedtime: "calming and suitable for bedtime",
+      rhyme: "with rhyming verses and poetic structure"
+    };
+    
+    const styleDescriptions = {
+      ghibli: "with magical landscapes and whimsical characters",
+      animation: "with vibrant 3D animated scenes",
+      cartoon: "with fun cartoon characters and lively action",
+      watercolor: "with dreamy watercolor visuals and soft transitions"
+    };
+    
+    // Create a more detailed prompt for better story generation
+    const prompt = `Write a short ${themeDescriptions[theme] || theme} story about "${topic}" ${styleDescriptions[style] || style}. 
+    Make it engaging, focused specifically on ${topic}, and suitable for a video presentation. 
+    Keep it under 300 words and make sure it's appropriate for all ages.
+    The story should have a clear beginning, middle, and end.`;
     
     console.log("Generating story with prompt:", prompt)
     
@@ -57,7 +75,7 @@ serve(async (req) => {
       // Initialize Hugging Face client
       const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
       
-      // Text generation with Mistral model
+      // Text generation with Mistral model - improved prompt format
       const textResult = await hf.textGeneration({
         model: 'mistralai/Mistral-7B-Instruct-v0.2',
         inputs: `<s>[INST] ${prompt} [/INST]`,
@@ -77,15 +95,19 @@ serve(async (req) => {
       }
     } catch (textError) {
       console.error("Text generation failed:", textError)
-      // Fallback text generation
+      // More contextual fallback text generation
       generatedText = `Once upon a time, there was a fascinating story about ${topic}. 
       It was a ${theme} tale told in the beautiful ${style} style. 
-      The characters were vivid and the plot was engaging. 
-      Everyone who heard this story was captivated by its magic.`
+      The story featured interesting characters and an engaging plot centered around ${topic}.
+      ${theme === 'education' ? `There were many interesting facts about ${topic} to learn from this story.` : ''}
+      ${theme === 'planet' ? `The story took us to fascinating worlds and cosmic adventures related to ${topic}.` : ''}
+      ${theme === 'bedtime' ? `It was the perfect calming tale about ${topic} to help anyone drift into peaceful sleep.` : ''}
+      ${theme === 'rhyme' ? `The rhyming verses about ${topic} created a musical quality to the storytelling.` : ''}
+      Everyone who experienced this story was captivated by its magic.`
     }
     
     // Generate an image for the story
-    const imagePrompt = `A ${style} illustration for a ${theme} story about ${topic}`
+    const imagePrompt = `A ${style} illustration for a ${theme} story about ${topic}, detailed and vibrant`
     console.log("Generating image with prompt:", imagePrompt)
     
     let imageResult = null
@@ -98,7 +120,8 @@ serve(async (req) => {
         model: 'stabilityai/stable-diffusion-xl-base-1.0',
         inputs: imagePrompt,
         parameters: {
-          negative_prompt: 'low quality, blurry',
+          negative_prompt: 'low quality, blurry, distorted',
+          guidance_scale: 7.5
         }
       })
       
@@ -117,6 +140,8 @@ serve(async (req) => {
       // Safely access the video library
       if (videoLibrary[style] && videoLibrary[style][theme]) {
         videoUrl = videoLibrary[style][theme];
+      } else {
+        console.log(`No specific video found for style="${style}" and theme="${theme}", using fallback`);
       }
     } catch (videoError) {
       console.error("Error selecting video:", videoError);
@@ -139,7 +164,7 @@ serve(async (req) => {
         error: 'Story generation failed',
         text: 'Once upon a time in a land far away... (AI-generated story unavailable at this moment, please try again later)',
         image: null,
-        videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        videoUrl: fallbackVideo,
         details: error.message 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
