@@ -1,19 +1,30 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
+import { Theme } from "./ThemeSelector";
+import { Style } from "./StyleSelector";
 
 interface StoryData {
   title: string;
   story: string;
   videoUrl: string;
   thumbnail: string;
+  videoBase64?: string;
 }
 
-export default function VideoPlayer() {
-  const [searchParams] = useSearchParams();
+interface StoryGeneratorProps {
+  theme: Theme;
+  style: Style;
+  topic: string;
+  onBack: () => void;
+  onFinish: () => void;
+}
+
+export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryGeneratorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [storyData, setStoryData] = useState<StoryData | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -22,20 +33,38 @@ export default function VideoPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [videoBase64, setVideoBase64] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStory = async () => {
-      const videoId = searchParams.get("videoId");
-
-      if (videoId) {
-        const { data } = await axios.get(`/api/get-story?videoId=${videoId}`);
-        setStoryData(data);
-        setVideoBase64(data?.videoBase64 || null); // If API returns base64
+    const generateStory = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await axios.post('/api/generate-story', {
+          theme,
+          style,
+          topic
+        });
+        
+        setStoryData({
+          title: topic,
+          story: data.story,
+          videoUrl: '',
+          thumbnail: '',
+          videoBase64: data.videoBase64
+        });
+        
+        setVideoBase64(data.videoBase64 || null);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error generating story:', err);
+        setError('Failed to generate story. Please try again.');
+        setIsLoading(false);
       }
     };
 
-    fetchStory();
-  }, [searchParams]);
+    generateStory();
+  }, [theme, style, topic]);
 
   const handleVideoEnd = () => {
     setIsPlaying(false);
@@ -76,6 +105,29 @@ export default function VideoPlayer() {
       setIsMuted(newVolume === 0);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+        Generating your story...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
+        <p className="text-red-500">{error}</p>
+        <button 
+          onClick={onBack} 
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   if (!storyData) {
     return (
@@ -150,6 +202,18 @@ export default function VideoPlayer() {
           {Math.floor(currentTime)}s / {Math.floor(duration)}s
         </div>
       </div>
+      
+      <div className="flex gap-4 mt-8">
+        <button onClick={onBack} className="px-4 py-2 bg-gray-500 text-white rounded">
+          Back
+        </button>
+        <button onClick={onFinish} className="px-4 py-2 bg-green-500 text-white rounded">
+          Save Story
+        </button>
+      </div>
     </div>
   );
 }
+
+// Also export the component as default for backward compatibility
+export default StoryGenerator;
