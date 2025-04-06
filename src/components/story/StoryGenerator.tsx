@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 
@@ -13,7 +13,7 @@ interface StoryData {
 }
 
 export default function VideoPlayer() {
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [storyData, setStoryData] = useState<StoryData | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -106,7 +106,6 @@ export default function VideoPlayer() {
               setIsPlaying(true);
             }}
             muted={isMuted}
-            volume={volume}
           >
             <source src={`data:video/mp4;base64,${videoBase64}`} type="video/mp4" />
             Your browser does not support the video tag.
@@ -124,7 +123,7 @@ export default function VideoPlayer() {
               setIsPlaying(true);
             }}
             muted={isMuted}
-            volume={volume}
+            controls
           />
         ) : null}
 
