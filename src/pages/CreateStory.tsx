@@ -35,7 +35,7 @@ const CreateStory = () => {
   const handleFinish = () => {
     toast({
       title: "Story Created!",
-      description: "Your story video has been successfully created and saved to your library.",
+      description: "Your story video has been successfully saved to your library.",
     });
     navigate('/dashboard');
   };

@@ -1,14 +1,28 @@
-
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/common/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { format, parseISO } from 'date-fns';
+
+interface Story {
+  id: string;
+  title: string;
+  theme: string;
+  style: string;
+  thumbnail: string;
+  created_at: string;
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Get user display name
   const getUserName = () => {
@@ -19,25 +33,60 @@ const Dashboard = () => {
            'User';
   };
 
-  // Mock story data
-  const stories = [
-    {
-      id: '1',
-      title: 'Ocean Adventure',
-      theme: 'education',
-      style: 'animation',
-      imageUrl: 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&auto=format&fit=crop',
-      date: '2 days ago',
-    },
-    {
-      id: '2',
-      title: 'Forest Friends',
-      theme: 'bedtime',
-      style: 'ghibli',
-      imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=500&auto=format&fit=crop',
-      date: '1 week ago',
-    },
-  ];
+  useEffect(() => {
+    const fetchStories = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('stories')
+          .select('id, title, theme, style, thumbnail, created_at')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Error fetching stories:', error);
+          setError('Failed to load your stories');
+        } else {
+          setStories(data || []);
+        }
+      } catch (err) {
+        console.error('Error in fetch stories operation:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStories();
+  }, [user]);
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      const now = new Date();
+      
+      // If less than 24 hours ago
+      if (now.getTime() - date.getTime() < 24 * 60 * 60 * 1000) {
+        return format(date, "'Today at' h:mm a");
+      }
+      
+      // If less than 48 hours ago
+      if (now.getTime() - date.getTime() < 2 * 24 * 60 * 60 * 1000) {
+        return 'Yesterday';
+      }
+      
+      // If within last week
+      if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+        return format(date, "EEEE"); // Day of week
+      }
+      
+      // Otherwise
+      return format(date, "MMM d, yyyy");
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -56,7 +105,16 @@ const Dashboard = () => {
           </Button>
         </div>
         
-        {stories.length > 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        ) : stories.length > 0 ? (
           <div>
             <h2 className="text-xl font-semibold mb-4">Your Stories</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -64,9 +122,13 @@ const Dashboard = () => {
                 <Card key={story.id} className="story-card overflow-hidden">
                   <div className="h-48 overflow-hidden">
                     <img 
-                      src={story.imageUrl} 
+                      src={story.thumbnail} 
                       alt={story.title} 
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&auto=format&fit=crop';
+                      }}
                     />
                   </div>
                   <CardContent className="pt-4">
@@ -77,7 +139,7 @@ const Dashboard = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="text-sm text-muted-foreground">
-                    Created {story.date}
+                    Created {formatDate(story.created_at)}
                   </CardFooter>
                 </Card>
               ))}

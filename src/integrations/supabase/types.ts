@@ -33,6 +33,48 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          created_at: string
+          id: string
+          story: string | null
+          style: string
+          theme: string
+          thumbnail: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_base64: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story?: string | null
+          style: string
+          theme: string
+          thumbnail?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_base64?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story?: string | null
+          style?: string
+          theme?: string
+          thumbnail?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_base64?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

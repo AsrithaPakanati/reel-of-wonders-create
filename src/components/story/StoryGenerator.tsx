@@ -7,6 +7,8 @@ import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { Theme } from "./ThemeSelector";
 import { Style } from "./StyleSelector";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StoryData {
   title: string;
@@ -34,7 +36,9 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
   const [volume, setVolume] = useState(1);
   const [videoBase64, setVideoBase64] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const generateStory = async () => {
@@ -103,6 +107,45 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     if (videoRef.current) {
       videoRef.current.volume = newVolume;
       setIsMuted(newVolume === 0);
+    }
+  };
+
+  const handleSaveStory = async () => {
+    if (!user || !storyData) return;
+    
+    setIsSaving(true);
+    
+    try {
+      // Generate a simple thumbnail from the first frame or use a placeholder
+      const thumbnail = videoBase64 ? 
+        `data:image/png;base64,${videoBase64.substring(0, 100)}` : 
+        'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&auto=format&fit=crop';
+      
+      // Insert story data into Supabase
+      const { error: supabaseError } = await supabase
+        .from('stories')
+        .insert({
+          user_id: user.id,
+          title: storyData.title,
+          theme: theme,
+          style: style,
+          story: storyData.story,
+          video_base64: videoBase64,
+          video_url: storyData.videoUrl,
+          thumbnail: thumbnail
+        });
+      
+      if (supabaseError) {
+        console.error('Error saving story:', supabaseError);
+        setError('Failed to save story. Please try again.');
+      } else {
+        onFinish();
+      }
+    } catch (err) {
+      console.error('Error in save operation:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -207,8 +250,19 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
         <button onClick={onBack} className="px-4 py-2 bg-gray-500 text-white rounded">
           Back
         </button>
-        <button onClick={onFinish} className="px-4 py-2 bg-green-500 text-white rounded">
-          Save Story
+        <button 
+          onClick={handleSaveStory} 
+          disabled={isSaving} 
+          className="px-4 py-2 bg-green-500 text-white rounded flex items-center"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Story'
+          )}
         </button>
       </div>
     </div>
