@@ -38,15 +38,15 @@ const Index = () => {
                 <div className="relative h-[400px] md:h-[500px] w-full">
                   <div className="absolute top-4 right-4 z-10 w-64 h-80 rounded-lg overflow-hidden shadow-2xl animate-float">
                     <img 
-                      src="https://images.unsplash.com/photo-1533208087231-c3618eab623c?w=500&auto=format&fit=crop" 
-                      alt="Story example" 
+                      src="/lovable-uploads/a892baf2-b3e4-442d-a2d1-907259c7d0c7.png" 
+                      alt="Child using computer with magical background" 
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="absolute bottom-4 left-4 z-20 w-64 h-80 rounded-lg overflow-hidden shadow-2xl animate-float" style={{ animationDelay: '2s' }}>
                     <img 
-                      src="https://images.unsplash.com/photo-1546522071-11839472c4c5?w=500&auto=format&fit=crop" 
-                      alt="Story example" 
+                      src="/lovable-uploads/28511add-1f90-4ddd-b768-58ca6cf782f7.png" 
+                      alt="Children exploring digital world through laptop" 
                       className="w-full h-full object-cover"
                     />
                   </div>
