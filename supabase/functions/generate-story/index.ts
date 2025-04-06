@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
@@ -31,6 +32,7 @@ serve(async (req) => {
     const prompt = `A short ${themeDescriptions[theme] || theme} story about "${topic}" ${styleDescriptions[style] || style}.`
 
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    console.log("Starting story generation with prompt:", prompt)
 
     // Generate text
     const textResult = await hf.textGeneration({
@@ -43,16 +45,20 @@ serve(async (req) => {
     })
 
     const storyText = textResult.generated_text || "Once upon a time..."
+    console.log("Generated story text successfully")
 
+    console.log("Starting video generation")
     // Generate video
     const videoResult = await hf.textToVideo({
       model: "damo-vilab/modelscope-text-to-video-synthesis",
       inputs: prompt
     })
 
+    console.log("Video generation completed, processing result")
     const videoBlob = await videoResult.blob()
     const buffer = await videoBlob.arrayBuffer()
     const base64Video = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    console.log("Video processed and converted to base64")
 
     return new Response(JSON.stringify({
       story: storyText,
@@ -62,8 +68,11 @@ serve(async (req) => {
     })
 
   } catch (err) {
-    console.error(err)
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("Error in generate-story function:", err)
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      stack: err.stack 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

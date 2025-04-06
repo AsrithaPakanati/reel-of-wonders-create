@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ const Dashboard = () => {
         const { data, error } = await supabase
           .from('stories')
           .select('id, title, theme, style, thumbnail, created_at')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
         if (error) {

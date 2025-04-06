@@ -2,13 +2,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { Theme } from "./ThemeSelector";
 import { Style } from "./StyleSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
 
 interface StoryData {
   title: string;
