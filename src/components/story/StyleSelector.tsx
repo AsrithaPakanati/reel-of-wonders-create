@@ -76,6 +76,11 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
                 src={style.image}
                 alt={style.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error(`Failed to load image: ${style.image}`);
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&auto=format&fit=crop';
+                }}
               />
             </div>
             <div className="p-4">
