@@ -25,7 +25,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?w=800&auto=format&fit=crop',
+      image: 'https://images.theindiadaily.com/uploadimage/library/16_9/16_9_5/ghibli-style-image-for-eid-1969816343.webp',
     },
     {
       id: 'animation',
@@ -37,7 +37,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'cartoon',
       title: 'Cartoon',
       description: 'Fun, expressive cartoon characters',
-      image: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?w=800&auto=format&fit=crop',
+      image: 'https://as1.ftcdn.net/jpg/06/94/70/34/220_F_694703473_Oxqv5uvaaNDFWw0cUsRqrMTNfNZRSuVw.jpg',
     },
     {
       id: 'watercolor',
