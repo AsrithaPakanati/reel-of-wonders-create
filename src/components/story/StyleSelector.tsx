@@ -37,7 +37,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'cartoon',
       title: 'Cartoon',
       description: 'Fun, expressive cartoon characters',
-      image: 'https://as1.ftcdn.net/jpg/06/94/70/34/220_F_694703473_Oxqv5uvaaNDFWw0cUsRqrMTNfNZRSuVw.jpg',
+      image: 'public/lovable-uploads/WhatsApp Image 2025-04-06 at 09.48.33_a5d1e814.jpg',
     },
     {
       id: 'watercolor',
