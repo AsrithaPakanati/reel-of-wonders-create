@@ -25,7 +25,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: '/lovable-uploads/f8b91ab1-9be3-48c8-a41f-4d786d461f51.png',
+      image: '/lovable-uploads/95b8482e-8488-4e02-b538-c2cf241cb639.png',
     },
     {
       id: 'animation',
