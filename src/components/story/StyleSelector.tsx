@@ -43,7 +43,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'watercolor',
       title: 'Watercolor',
       description: 'Soft, dreamy watercolor illustrations',
-      image: 'https://images.unsplash.com/photo-1579547945413-497e1b99dac0?w=800&auto=format&fit=crop',
+      image: 'https://ih1.redbubble.net/image.2270105013.9863/gbrf,10x12,f,540x540-pad,450x450,f8f8f8.webp',
     },
   ];
 
