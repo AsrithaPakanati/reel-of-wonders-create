@@ -25,7 +25,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: 'https://images.theindiadaily.com/uploadimage/library/16_9/16_9_5/ghibli-style-image-for-eid-1969816343.webp',
+      image: 'https://img.freepik.com/premium-photo/studio-ghibli-style-cute-curious-crawling-tan-skin-toddler_854727-6598.jpg',
     },
     {
       id: 'animation',
@@ -43,7 +43,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'watercolor',
       title: 'Watercolor',
       description: 'Soft, dreamy watercolor illustrations',
-      image: 'https://ih1.redbubble.net/image.2270105013.9863/gbrf,10x12,f,540x540-pad,450x450,f8f8f8.webp',
+      image: 'https://img.freepik.com/premium-photo/watercolor-painting-panda-jungle_391229-1174.jpg',
     },
   ];
 
