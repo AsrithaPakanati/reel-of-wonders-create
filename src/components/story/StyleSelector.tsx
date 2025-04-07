@@ -25,7 +25,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: '/lovable-uploads/95b8482e-8488-4e02-b538-c2cf241cb639.png',
+      image: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?w=800&auto=format&fit=crop',
     },
     {
       id: 'animation',
@@ -37,7 +37,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'cartoon',
       title: 'Cartoon',
       description: 'Fun, expressive cartoon characters',
-      image: '/lovable-uploads/30a6b18b-fa5d-484e-940b-f07547c718a2.png',
+      image: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?w=800&auto=format&fit=crop',
     },
     {
       id: 'watercolor',
