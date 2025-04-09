@@ -25,7 +25,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: 'https://img.freepik.com/premium-photo/studio-ghibli-style-cute-curious-crawling-tan-skin-toddler_854727-6598.jpg',
+      image: '/lovable-uploads/0f32e26a-dd48-4c39-8752-8039aeff2468.png',
     },
     {
       id: 'animation',
