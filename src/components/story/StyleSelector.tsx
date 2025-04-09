@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +19,12 @@ interface StyleOption {
 
 export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
   const [selected, setSelected] = useState<Style | null>(null);
+  const [timestamp, setTimestamp] = useState<string>('');
+
+  useEffect(() => {
+    // Generate a timestamp to force image cache refresh
+    setTimestamp(`?t=${new Date().getTime()}`);
+  }, []);
 
   const styles: StyleOption[] = [
     {
@@ -73,7 +79,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
           >
             <div className="h-40 w-full overflow-hidden">
               <img 
-                src={style.image}
+                src={`${style.image}${timestamp}`}
                 alt={style.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
