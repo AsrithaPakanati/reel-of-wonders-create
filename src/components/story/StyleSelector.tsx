@@ -19,31 +19,25 @@ interface StyleOption {
 
 export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
   const [selected, setSelected] = useState<Style | null>(null);
-  const [timestamp, setTimestamp] = useState<string>('');
-
-  useEffect(() => {
-    // Generate a timestamp to force image cache refresh
-    setTimestamp(`?t=${new Date().getTime()}`);
-  }, []);
 
   const styles: StyleOption[] = [
     {
       id: 'ghibli',
       title: 'Studio Ghibli',
       description: 'Magical, whimsical worlds with detailed backgrounds',
-      image: '/lovable-uploads/0f32e26a-dd48-4c39-8752-8039aeff2468.png',
+      image: 'https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=800&auto=format&fit=crop',
     },
     {
       id: 'animation',
       title: '3D Animation',
       description: 'Modern, vibrant 3D animated style',
-      image: '/lovable-uploads/1f7f9dfa-22af-477c-a9e3-e20f05c03d11.png',
+      image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800&auto=format&fit=crop',
     },
     {
       id: 'cartoon',
       title: 'Cartoon',
       description: 'Fun, expressive cartoon characters',
-      image: '/lovable-uploads/540349d1-e055-4a85-b24f-9a577d39ec6a.png',
+      image: 'https://images.unsplash.com/photo-1637858868799-7f26a0640eb6?w=800&auto=format&fit=crop',
     },
     {
       id: 'watercolor',
@@ -79,7 +73,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
           >
             <div className="h-40 w-full overflow-hidden">
               <img 
-                src={`${style.image}${timestamp}`}
+                src={style.image}
                 alt={style.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
