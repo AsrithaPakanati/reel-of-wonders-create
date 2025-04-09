@@ -31,7 +31,7 @@ export function StyleSelector({ onSelect, onBack }: StyleSelectorProps) {
       id: 'animation',
       title: '3D Animation',
       description: 'Modern, vibrant 3D animated style',
-      image: 'https://images.unsplash.com/photo-1633613286991-611fe299c4be?w=800&auto=format&fit=crop',
+      image: '/lovable-uploads/1f7f9dfa-22af-477c-a9e3-e20f05c03d11.png',
     },
     {
       id: 'cartoon',
