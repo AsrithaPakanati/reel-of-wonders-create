@@ -7,7 +7,6 @@ import { Theme } from "./ThemeSelector";
 import { Style } from "./StyleSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import axios from "axios";
 
 interface StoryData {
   title: string;
@@ -43,7 +42,8 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     const generateStory = async () => {
       try {
         setIsLoading(true);
-        // For this demo, we'll use a placeholder story and video for "Twinkle Twinkle Little Star"
+        
+        // Use a placeholder story for "Twinkle Twinkle Little Star"
         const placeholderStory = `Twinkle, twinkle, little star,
 How I wonder what you are!
 Up above the world so high,
@@ -58,12 +58,15 @@ Then the traveler in the dark
 Thanks you for your tiny spark,
 How could he see where to go,
 If you did not twinkle so?`;
+
+        // Reliable placeholder video URL
+        const placeholderVideoUrl = "https://cdn.pixabay.com/vimeo/149018784/twinkle-4005.mp4";
         
         setStoryData({
           title: topic || "Twinkle Twinkle Little Star",
           story: placeholderStory,
-          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-          thumbnail: 'https://images.unsplash.com/photo-1520034475321-cbe63696469a?w=800&auto=format&fit=crop',
+          videoUrl: placeholderVideoUrl,
+          thumbnail: 'https://images.unsplash.com/photo-1464802686167-b939a6910659?w=800&auto=format&fit=crop',
         });
         
         setIsLoading(false);
@@ -125,7 +128,7 @@ If you did not twinkle so?`;
     try {
       // Generate a simple thumbnail from the first frame or use a placeholder
       const thumbnail = storyData.thumbnail || 
-        'https://images.unsplash.com/photo-1520034475321-cbe63696469a?w=800&auto=format&fit=crop';
+        'https://images.unsplash.com/photo-1464802686167-b939a6910659?w=800&auto=format&fit=crop';
       
       // Insert story data into Supabase
       const { error: supabaseError } = await supabase
@@ -199,8 +202,8 @@ If you did not twinkle so?`;
           autoPlay
           poster={storyData.thumbnail}
           className="w-full h-full rounded-lg"
-          onEnded={handleVideoEnd}
-          onTimeUpdate={handleTimeUpdate}
+          onEnded={() => setIsPlaying(false)}
+          onTimeUpdate={() => videoRef.current && setCurrentTime(videoRef.current.currentTime)}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);
             setIsPlaying(true);
@@ -212,11 +215,33 @@ If you did not twinkle so?`;
         </video>
 
         <div className="flex justify-between items-center mt-4">
-          <button onClick={togglePlay} className="px-4 py-2 bg-blue-500 text-white rounded">
+          <button 
+            onClick={() => {
+              if (videoRef.current) {
+                if (videoRef.current.paused) {
+                  videoRef.current.play();
+                  setIsPlaying(true);
+                } else {
+                  videoRef.current.pause();
+                  setIsPlaying(false);
+                }
+              }
+            }} 
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
             {isPlaying ? "Pause" : "Play"}
           </button>
 
-          <button onClick={toggleMute} className="px-4 py-2 bg-gray-500 text-white rounded">
+          <button 
+            onClick={() => {
+              if (videoRef.current) {
+                const newMuted = !videoRef.current.muted;
+                videoRef.current.muted = newMuted;
+                setIsMuted(newMuted);
+              }
+            }} 
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
             {isMuted ? "Unmute" : "Mute"}
           </button>
 
@@ -226,7 +251,14 @@ If you did not twinkle so?`;
             max={1}
             step={0.01}
             value={volume}
-            onChange={handleVolumeChange}
+            onChange={(e) => {
+              const newVolume = parseFloat(e.target.value);
+              setVolume(newVolume);
+              if (videoRef.current) {
+                videoRef.current.volume = newVolume;
+                setIsMuted(newVolume === 0);
+              }
+            }}
             className="w-32"
           />
         </div>
@@ -258,5 +290,4 @@ If you did not twinkle so?`;
   );
 }
 
-// Also export the component as default for backward compatibility
 export default StoryGenerator;
