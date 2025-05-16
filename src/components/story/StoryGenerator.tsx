@@ -43,21 +43,29 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     const generateStory = async () => {
       try {
         setIsLoading(true);
-        const { data } = await axios.post('/api/generate-story', {
-          theme,
-          style,
-          topic
-        });
+        // For this demo, we'll use a placeholder story and video for "Twinkle Twinkle Little Star"
+        const placeholderStory = `Twinkle, twinkle, little star,
+How I wonder what you are!
+Up above the world so high,
+Like a diamond in the sky.
+
+When the blazing sun is gone,
+When he nothing shines upon,
+Then you show your little light,
+Twinkle, twinkle, all the night.
+
+Then the traveler in the dark
+Thanks you for your tiny spark,
+How could he see where to go,
+If you did not twinkle so?`;
         
         setStoryData({
-          title: topic,
-          story: data.story,
-          videoUrl: '',
-          thumbnail: '',
-          videoBase64: data.videoBase64
+          title: topic || "Twinkle Twinkle Little Star",
+          story: placeholderStory,
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+          thumbnail: 'https://images.unsplash.com/photo-1520034475321-cbe63696469a?w=800&auto=format&fit=crop',
         });
         
-        setVideoBase64(data.videoBase64 || null);
         setIsLoading(false);
       } catch (err) {
         console.error('Error generating story:', err);
@@ -116,9 +124,8 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
     
     try {
       // Generate a simple thumbnail from the first frame or use a placeholder
-      const thumbnail = videoBase64 ? 
-        `data:image/png;base64,${videoBase64.substring(0, 100)}` : 
-        'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&auto=format&fit=crop';
+      const thumbnail = storyData.thumbnail || 
+        'https://images.unsplash.com/photo-1520034475321-cbe63696469a?w=800&auto=format&fit=crop';
       
       // Insert story data into Supabase
       const { error: supabaseError } = await supabase
@@ -183,43 +190,26 @@ export function StoryGenerator({ theme, style, topic, onBack, onFinish }: StoryG
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="text-3xl font-bold mb-4">{storyData.title}</h1>
-      <p className="mb-6 max-w-xl text-center">{storyData.story}</p>
+      <p className="mb-6 max-w-xl text-center whitespace-pre-line">{storyData.story}</p>
 
       <div className="w-full max-w-2xl relative">
-        {videoBase64 ? (
-          <video
-            controls
-            autoPlay
-            ref={videoRef}
-            poster={storyData?.thumbnail}
-            className="w-full h-full rounded-lg"
-            onEnded={handleVideoEnd}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={(e) => {
-              setDuration(e.currentTarget.duration);
-              setIsPlaying(true);
-            }}
-            muted={isMuted}
-          >
-            <source src={`data:video/mp4;base64,${videoBase64}`} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        ) : storyData?.videoUrl ? (
-          <video
-            ref={videoRef}
-            src={storyData.videoUrl}
-            poster={storyData.thumbnail}
-            className="w-full h-full rounded-lg"
-            onEnded={handleVideoEnd}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={(e) => {
-              setDuration(e.currentTarget.duration);
-              setIsPlaying(true);
-            }}
-            muted={isMuted}
-            controls
-          />
-        ) : null}
+        <video
+          ref={videoRef}
+          controls
+          autoPlay
+          poster={storyData.thumbnail}
+          className="w-full h-full rounded-lg"
+          onEnded={handleVideoEnd}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={(e) => {
+            setDuration(e.currentTarget.duration);
+            setIsPlaying(true);
+          }}
+          muted={isMuted}
+        >
+          <source src={storyData.videoUrl} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
 
         <div className="flex justify-between items-center mt-4">
           <button onClick={togglePlay} className="px-4 py-2 bg-blue-500 text-white rounded">

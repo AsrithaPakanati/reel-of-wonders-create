@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,18 +39,8 @@ const Dashboard = () => {
       
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('stories')
-          .select('id, title, theme, style, thumbnail, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          console.error('Error fetching stories:', error);
-          setError('Failed to load your stories');
-        } else {
-          setStories(data || []);
-        }
+        // Clear stories for this task
+        setStories([]);
       } catch (err) {
         console.error('Error in fetch stories operation:', err);
         setError('An unexpected error occurred');
